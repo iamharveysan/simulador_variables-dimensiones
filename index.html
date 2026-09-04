@@ -145,6 +145,12 @@ main{padding:24px 28px 80px;position:relative}
   .s4,.s5,.s6,.s7,.s8{grid-column:span 12}.drop-grid,.drop-grid.three,.option-grid{grid-template-columns:1fr}
   .startbox{grid-template-columns:1fr}.hero{padding:34px}.hero h2{font-size:40px}
 }
+
+.drag-card.locked{cursor:not-allowed!important;pointer-events:none}
+.drag-card.locked.correct-card{background:#E0F1EA;border-color:#8BC5B2;color:#205F4E}
+.drag-card.locked.wrong-card{background:#F7E7E7;border-color:#D8AAAA;color:#7A3C3C}
+.instant-note{font-size:12px;margin-top:6px;line-height:1.35}
+
 </style>
 </head>
 <body>
@@ -195,7 +201,7 @@ main{padding:24px 28px 80px;position:relative}
       <div class="dropzone" data-zone="cuanti"><h4>Cuantitativa</h4><div class="hint">Valores numéricos que representan cantidad o medida.</div><div class="zone-items"></div></div>
     </div>
     <div class="feedback" id="fb1"></div>
-    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="1">Verificar</button><button class="btn btn-success nextLevel" data-next="level2" disabled>Continuar</button></div>
+    <div class="actions"><div class="score-pill">Una sola oportunidad por tarjeta · el nivel avanza automáticamente</div></div>
   </section>
 
   <!-- NIVEL 2 -->
@@ -216,7 +222,7 @@ main{padding:24px 28px 80px;position:relative}
       <div class="dropzone" data-zone="continua"><h4>Continua</h4><div class="hint">Se mide. Puede tomar valores dentro de un intervalo.</div><div class="zone-items"></div></div>
     </div>
     <div class="feedback" id="fb2"></div>
-    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="2">Verificar</button><button class="btn btn-success nextLevel" data-next="level3" disabled>Continuar</button></div>
+    <div class="actions"><div class="score-pill">Una sola oportunidad por tarjeta · el nivel avanza automáticamente</div></div>
   </section>
 
   <!-- NIVEL 3 -->
@@ -238,7 +244,7 @@ main{padding:24px 28px 80px;position:relative}
       <div class="dropzone" data-zone="dicotomica"><h4>Dicotómica</h4><div class="hint">Solo dos categorías posibles.</div><div class="zone-items"></div></div>
     </div>
     <div class="feedback" id="fb3"></div>
-    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="3">Verificar</button><button class="btn btn-success nextLevel" data-next="level4" disabled>Continuar</button></div>
+    <div class="actions"><div class="score-pill">Una sola oportunidad por tarjeta · el nivel avanza automáticamente</div></div>
   </section>
 
   <!-- NIVEL 4 -->
@@ -261,7 +267,7 @@ main{padding:24px 28px 80px;position:relative}
       <div class="dropzone" data-zone="indicador"><h4>Indicadores</h4><div class="hint">Señales concretas que se pueden observar o medir.</div><div class="zone-items"></div></div>
     </div>
     <div class="feedback" id="fb4"></div>
-    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="4">Verificar</button><button class="btn btn-success nextLevel" data-next="level5" disabled>Continuar</button></div>
+    <div class="actions"><div class="score-pill">Una sola oportunidad por tarjeta · el nivel avanza automáticamente</div></div>
   </section>
 
   <!-- NIVEL 5 -->
@@ -274,7 +280,7 @@ main{padding:24px 28px 80px;position:relative}
       <div class="scenario" id="scenarioText"></div>
       <div class="option-grid" id="options"></div>
       <div class="feedback" id="quizFeedback"></div>
-      <div class="actions"><button class="btn btn-dark" id="nextQuestion" disabled>Siguiente situación</button></div>
+      <div class="actions"><div class="score-pill">La siguiente situación aparecerá automáticamente</div></div>
     </div>
   </section>
 
@@ -308,14 +314,21 @@ main{padding:24px 28px 80px;position:relative}
   const scoreTop = document.getElementById('scoreTop');
   const studentSide = document.getElementById('studentSide');
 
+  const levelConfig = {
+    level1:{points:15,next:'level2'},
+    level2:{points:15,next:'level3'},
+    level3:{points:15,next:'level4'},
+    level4:{points:20,next:'level5'}
+  };
+
   const state = {
-    student: '',
-    score: 0,
-    completed: new Set(),
-    placements: {},
-    quizIndex: 0,
-    quizScore: 0,
-    selectedCard: null
+    student:'',
+    score:0,
+    completed:new Set(),
+    selectedCard:null,
+    quizIndex:0,
+    quizScore:0,
+    levelResults:{}
   };
 
   const quiz = [
@@ -350,7 +363,7 @@ main{padding:24px 28px 80px;position:relative}
     }
   ];
 
-  screens.forEach((s,i)=>{
+  screens.forEach(s=>{
     if(s.id==='start') return;
     const b=document.createElement('button');
     b.className='step-link locked';
@@ -363,134 +376,119 @@ main{padding:24px 28px 80px;position:relative}
   });
 
   function showScreen(id){
-    screens.forEach(s=>s.classList.toggle('active', s.id===id));
-    [...nav.children].forEach(b=>b.classList.toggle('active', b.dataset.target===id));
+    screens.forEach(s=>s.classList.toggle('active',s.id===id));
+    [...nav.children].forEach(b=>b.classList.toggle('active',b.dataset.target===id));
     window.scrollTo({top:0,behavior:'smooth'});
   }
-
   function unlock(id){
     const b=[...nav.children].find(x=>x.dataset.target===id);
     if(b) b.classList.remove('locked');
   }
-
   function markDone(id){
     const b=[...nav.children].find(x=>x.dataset.target===id);
-    if(b){ b.classList.remove('locked'); b.classList.add('done'); }
+    if(b){b.classList.remove('locked');b.classList.add('done')}
   }
-
   function updateScore(v){
-    state.score=Math.max(0,Math.min(100,v));
-    scoreTop.textContent=state.score;
+    state.score=Math.max(0,Math.min(100,Math.round(v*100)/100));
+    scoreTop.textContent=Number.isInteger(state.score)?state.score:state.score.toFixed(1);
   }
 
   document.getElementById('startBtn').addEventListener('click',()=>{
     const n=document.getElementById('nombre').value.trim();
     const a=document.getElementById('apellido').value.trim();
-    if(!n || !a){
-      alert('Ingresa nombre y apellido para comenzar.');
-      return;
-    }
+    if(!n||!a){alert('Ingresa nombre y apellido para comenzar.');return}
     state.student=`${n} ${a}`;
     studentSide.textContent=`Estudiante: ${state.student}`;
     unlock('level1');
     showScreen('level1');
   });
 
-  function initDragCard(card){
+  document.querySelectorAll('.drag-card').forEach(card=>{
     card.addEventListener('dragstart',e=>{
+      if(card.classList.contains('locked')){e.preventDefault();return}
       e.dataTransfer.setData('text/plain',card.dataset.id);
       state.selectedCard=card;
     });
     card.addEventListener('click',()=>{
+      if(card.classList.contains('locked')) return;
       document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('selected'));
       card.classList.add('selected');
       state.selectedCard=card;
     });
-  }
-  document.querySelectorAll('.drag-card').forEach(initDragCard);
+  });
 
   document.querySelectorAll('.dropzone').forEach(zone=>{
-    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('over')});
+    zone.addEventListener('dragover',e=>{
+      e.preventDefault();
+      zone.classList.add('over');
+    });
     zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
     zone.addEventListener('drop',e=>{
-      e.preventDefault();zone.classList.remove('over');
+      e.preventDefault();
+      zone.classList.remove('over');
       const id=e.dataTransfer.getData('text/plain');
       const card=document.querySelector(`.drag-card[data-id="${id}"]`);
-      if(card) placeCard(card,zone);
+      if(card) submitCard(card,zone);
     });
     zone.addEventListener('click',e=>{
       if(e.target.closest('.drag-card')) return;
       if(state.selectedCard && state.selectedCard.closest('.screen')===zone.closest('.screen')){
-        placeCard(state.selectedCard,zone);
+        submitCard(state.selectedCard,zone);
       }
     });
   });
 
-  function placeCard(card,zone){
-    const bank=zone.closest('.screen').querySelector('.drag-bank');
-    const items=zone.querySelector('.zone-items');
-    items.appendChild(card);
+  function submitCard(card,zone){
+    if(card.classList.contains('locked')) return;
+    const screen=zone.closest('.screen');
+    const levelId=screen.id;
+    const cfg=levelConfig[levelId];
+    if(!cfg) return;
+
+    const zoneItems=zone.querySelector('.zone-items');
+    zoneItems.appendChild(card);
     card.classList.remove('selected');
+    card.classList.add('locked');
+    card.draggable=false;
     state.selectedCard=null;
-    card.dataset.zone=zone.dataset.zone;
-    card.draggable=true;
-  }
 
-  document.querySelectorAll('.resetLevel').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const screen=btn.closest('.screen');
-      const bank=screen.querySelector('.drag-bank');
-      screen.querySelectorAll('.dropzone .drag-card').forEach(c=>{
-        delete c.dataset.zone;
-        bank.appendChild(c);
-      });
-      const fb=screen.querySelector('.feedback');
-      fb.className='feedback'; fb.textContent='';
-      screen.querySelector('.nextLevel').disabled=true;
-    });
-  });
+    if(!state.levelResults[levelId]){
+      state.levelResults[levelId]={answered:0,correct:0,total:screen.querySelectorAll('.drag-card').length};
+    }
+    const result=state.levelResults[levelId];
+    result.answered++;
 
-  document.querySelectorAll('.checkLevel').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const level=Number(btn.dataset.level);
-      const screen=btn.closest('.screen');
-      const cards=[...screen.querySelectorAll('.drag-card')];
-      const fb=screen.querySelector('.feedback');
-      const placed=cards.every(c=>c.dataset.zone);
-      if(!placed){
-        fb.className='feedback bad show';
-        fb.textContent='Aún quedan tarjetas sin clasificar.';
-        return;
-      }
-      let correct=0;
-      cards.forEach(c=>{ if(c.dataset.zone===c.dataset.answer) correct++; });
-      const pct=Math.round(correct/cards.length*100);
-      const points=level===4?20:15;
-      const earned=Math.round(points*(correct/cards.length));
-      if(!state.completed.has(screen.id)){
-        updateScore(state.score+earned);
-        state.completed.add(screen.id);
-      }
-      if(correct===cards.length){
+    const correct=zone.dataset.zone===card.dataset.answer;
+    if(correct){
+      result.correct++;
+      card.classList.add('correct-card');
+    }else{
+      card.classList.add('wrong-card');
+    }
+
+    const perCard=cfg.points/result.total;
+    if(correct) updateScore(state.score+perCard);
+
+    const fb=screen.querySelector('.feedback');
+    fb.className=`feedback ${correct?'good':'bad'} show`;
+    fb.innerHTML=correct
+      ? `✓ Correcto. <b>+${perCard.toFixed(1)} puntos</b>. La tarjeta queda registrada y no se puede mover.`
+      : `✕ Incorrecto. <b>0 puntos</b>. La respuesta queda registrada y no se puede corregir.`;
+
+    if(result.answered===result.total){
+      state.completed.add(levelId);
+      markDone(levelId);
+      setTimeout(()=>{
         fb.className='feedback good show';
-        fb.textContent=`¡Excelente! ${correct}/${cards.length} correctas. La clasificación es coherente.`;
-        screen.querySelector('.nextLevel').disabled=false;
-        markDone(screen.id);
-      } else {
-        fb.className='feedback bad show';
-        fb.textContent=`Tienes ${correct}/${cards.length} correctas. Revisa la definición de cada categoría antes de continuar.`;
-      }
-    });
-  });
-
-  document.querySelectorAll('.nextLevel').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const next=btn.dataset.next;
-      unlock(next);
-      showScreen(next);
-      if(next==='level5') renderQuiz();
-    });
-  });
+        fb.innerHTML=`Nivel cerrado: <b>${result.correct}/${result.total}</b> respuestas correctas. Avanzando...`;
+        unlock(cfg.next);
+        setTimeout(()=>{
+          showScreen(cfg.next);
+          if(cfg.next==='level5') renderQuiz();
+        },1200);
+      },850);
+    }
+  }
 
   function renderQuiz(){
     const q=quiz[state.quizIndex];
@@ -498,57 +496,54 @@ main{padding:24px 28px 80px;position:relative}
     const options=document.getElementById('options');
     options.innerHTML='';
     const fb=document.getElementById('quizFeedback');
-    fb.className='feedback'; fb.textContent='';
-    const nextBtn=document.getElementById('nextQuestion');
-    nextBtn.disabled=true;
-    nextBtn.textContent=state.quizIndex===quiz.length-1?'Finalizar misión':'Siguiente situación';
+    fb.className='feedback';fb.textContent='';
 
     q.options.forEach((opt,idx)=>{
       const b=document.createElement('button');
-      b.type='button';b.className='option';b.textContent=opt;
+      b.type='button';
+      b.className='option';
+      b.textContent=opt;
       b.addEventListener('click',()=>{
         options.querySelectorAll('.option').forEach(x=>x.disabled=true);
-        if(idx===q.correct){
+        const correct=idx===q.correct;
+        if(correct){
           b.classList.add('correct');
-          state.quizScore+=1;
+          state.quizScore++;
+          updateScore(state.score+8.75);
           fb.className='feedback good show';
-          fb.textContent=`Correcto. ${q.explain}`;
-        } else {
+          fb.innerHTML=`✓ Correcto. <b>+8.75 puntos.</b> ${q.explain}`;
+        }else{
           b.classList.add('wrong');
           options.children[q.correct].classList.add('correct');
           fb.className='feedback bad show';
-          fb.textContent=`No es la mejor opción. ${q.explain}`;
+          fb.innerHTML=`✕ Incorrecto. <b>0 puntos.</b> ${q.explain}`;
         }
-        nextBtn.disabled=false;
-      });
+
+        setTimeout(()=>{
+          if(state.quizIndex<quiz.length-1){
+            state.quizIndex++;
+            renderQuiz();
+          }else{
+            state.completed.add('level5');
+            markDone('level5');
+            unlock('final');
+            finish();
+          }
+        },1800);
+      },{once:true});
       options.appendChild(b);
     });
   }
 
-  document.getElementById('nextQuestion').addEventListener('click',()=>{
-    if(state.quizIndex<quiz.length-1){
-      state.quizIndex++;
-      renderQuiz();
-    } else {
-      if(!state.completed.has('level5')){
-        const earned=Math.round(35*(state.quizScore/quiz.length));
-        updateScore(state.score+earned);
-        state.completed.add('level5');
-      }
-      markDone('level5');
-      unlock('final');
-      finish();
-    }
-  });
-
   function finish(){
     document.getElementById('certName').textContent=state.student;
-    document.getElementById('finalScore').textContent=state.score;
+    const shown=Number.isInteger(state.score)?state.score:state.score.toFixed(1);
+    document.getElementById('finalScore').textContent=shown;
     const msg=state.score>=90
       ? 'Desempeño sobresaliente: domina la clasificación y la lógica de operacionalización.'
       : state.score>=75
       ? 'Buen desempeño: comprende los conceptos y puede aplicarlos en situaciones reales.'
-      : 'Misión completada. Se recomienda repasar las categorías y repetir el simulador para fortalecer el resultado.';
+      : 'Misión completada. El resultado refleja los aciertos obtenidos en el primer intento.';
     document.getElementById('certMessage').textContent=msg;
     showScreen('final');
   }
