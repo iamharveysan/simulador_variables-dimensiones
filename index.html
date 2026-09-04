@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DATA LAB · Simulador de Variables</title>
+<style>
+:root{
+  --navy:#102A43;
+  --navy2:#173B57;
+  --blue:#2F6F9F;
+  --cyan:#57A7C6;
+  --mint:#7CC7B7;
+  --green:#2E8B72;
+  --orange:#E49A61;
+  --cream:#F4E7D3;
+  --bg:#DCEAF2;
+  --bg2:#C9DCE8;
+  --card:#F8FCFE;
+  --ink:#183247;
+  --muted:#61798A;
+  --line:#B9CEDA;
+  --danger:#B95C5C;
+  --success:#2E8B72;
+  --shadow:0 18px 40px rgba(23,54,76,.14);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,var(--bg),var(--bg2));color:var(--ink)}
+body{overflow-x:hidden}
+button,input{font:inherit}
+.app{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+aside{
+  background:linear-gradient(180deg,var(--navy),var(--navy2));
+  color:white;padding:22px 16px;display:flex;flex-direction:column;gap:18px;
+  box-shadow:8px 0 28px rgba(13,36,52,.16);position:sticky;top:0;height:100vh
+}
+.brand{padding:10px 10px 18px;border-bottom:1px solid rgba(255,255,255,.13)}
+.brand small{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:#A8D3E6}
+.brand h1{margin:8px 0 0;font-size:24px;line-height:1.06;font-weight:650}
+.student-pill{padding:12px;border-radius:16px;background:rgba(255,255,255,.09);font-size:12px;color:rgba(255,255,255,.82)}
+.progress-side{display:flex;flex-direction:column;gap:8px}
+.step-link{
+  border:0;background:transparent;color:rgba(255,255,255,.67);text-align:left;
+  border-radius:12px;padding:10px 11px;cursor:pointer;font-size:12px;transition:.2s
+}
+.step-link.locked{opacity:.35;cursor:not-allowed}
+.step-link.active{background:#F8FCFE;color:var(--navy)}
+.step-link.done{color:#C7F0E5}
+.aside-footer{margin-top:auto;font-size:11px;line-height:1.45;color:rgba(255,255,255,.55)}
+
+main{padding:24px 28px 80px;position:relative}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+.kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--navy)}
+.score-pill{padding:8px 12px;background:rgba(248,252,254,.88);border:1px solid var(--line);border-radius:999px;font-size:12px}
+.screen{display:none;animation:enter .45s cubic-bezier(.2,.8,.2,1)}
+.screen.active{display:block}
+@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.hero{
+  min-height:calc(100vh - 140px);border-radius:30px;padding:54px;display:flex;flex-direction:column;justify-content:center;
+  background:
+    radial-gradient(circle at 85% 20%,rgba(124,199,183,.32),transparent 26%),
+    radial-gradient(circle at 15% 86%,rgba(228,154,97,.16),transparent 22%),
+    linear-gradient(135deg,#102A43 0%,#1B4C69 58%,#2F7997 100%);
+  color:white;box-shadow:var(--shadow);position:relative;overflow:hidden
+}
+.hero:after{content:"";position:absolute;width:440px;height:440px;border-radius:50%;right:-130px;top:-120px;border:1px solid rgba(255,255,255,.13)}
+.hero .tag{display:inline-flex;width:max-content;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);font-size:12px}
+.hero h2{font-size:54px;line-height:1.02;margin:18px 0 14px;font-weight:650;letter-spacing:-.03em;max-width:900px}
+.hero p{font-size:18px;line-height:1.55;max-width:820px;color:rgba(255,255,255,.84)}
+.startbox{margin-top:26px;display:grid;grid-template-columns:1fr 1fr auto;gap:10px;max-width:850px;position:relative;z-index:2}
+.startbox input{width:100%;padding:14px 15px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.11);color:white;border-radius:14px;outline:none}
+.startbox input::placeholder{color:rgba(255,255,255,.6)}
+.startbox input:focus{border-color:#BFE8DA;background:rgba(255,255,255,.15)}
+.btn{border:0;border-radius:14px;padding:13px 17px;cursor:pointer;font-weight:650}
+.btn-primary{background:var(--cream);color:var(--navy)}
+.btn-secondary{background:#F8FCFE;color:var(--navy);border:1px solid var(--line)}
+.btn-dark{background:var(--navy);color:white}
+.btn-success{background:var(--success);color:white}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.section-title{font-size:38px;line-height:1.08;margin:0 0 9px;font-weight:650;color:var(--navy);letter-spacing:-.025em}
+.subtitle{margin:0 0 22px;color:var(--muted);line-height:1.55;max-width:980px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:rgba(248,252,254,.96);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 10px 26px rgba(25,55,77,.07)}
+.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.card h3{margin:0 0 9px;color:var(--navy);font-size:20px;font-weight:650}
+.card p{margin:0;color:var(--muted);line-height:1.5}
+.challenge-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.badge{display:inline-flex;padding:7px 10px;border-radius:999px;background:#EAF4F8;border:1px solid var(--line);font-size:11px;color:var(--blue)}
+.instructions{background:linear-gradient(135deg,#F9FCFD,#EAF3F7);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:18px;color:var(--ink);line-height:1.5}
+.drag-bank{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px}
+.drag-card{
+  background:white;border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:grab;box-shadow:0 7px 16px rgba(25,55,77,.06);
+  transition:.2s;user-select:none;min-width:140px
+}
+.drag-card:hover{transform:translateY(-2px)}
+.drag-card.selected{outline:3px solid rgba(47,111,159,.25);border-color:var(--blue)}
+.drag-card.used{opacity:.38}
+.drop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.drop-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dropzone{
+  min-height:150px;border:2px dashed #91AFC0;border-radius:18px;padding:15px;background:rgba(248,252,254,.52);transition:.2s
+}
+.dropzone.over{background:#EAF4F8;border-color:var(--blue)}
+.dropzone h4{margin:0 0 10px;color:var(--navy);font-size:15px}
+.dropzone .hint{font-size:12px;color:var(--muted)}
+.zone-items{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.zone-items .drag-card{cursor:pointer;background:#F8FCFE}
+.feedback{display:none;margin-top:16px;padding:15px 17px;border-radius:15px;line-height:1.5}
+.feedback.show{display:block}
+.feedback.good{background:#E0F1EA;border:1px solid #9BCDBD;color:#205F4E}
+.feedback.bad{background:#F7E7E7;border:1px solid #D8AAAA;color:#7A3C3C}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
+.scenario{padding:18px;border-left:4px solid var(--teal);background:#F8FCFE;border-radius:0 16px 16px 0;line-height:1.55}
+.option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.option{
+  border:1px solid var(--line);background:#F8FCFE;border-radius:16px;padding:14px;text-align:left;cursor:pointer;transition:.2s
+}
+.option:hover{background:#ECF5F8}.option.chosen{border-color:var(--blue);outline:2px solid rgba(47,111,159,.14)}
+.option.correct{background:#E0F1EA;border-color:#8BC5B2}.option.wrong{background:#F7E7E7;border-color:#D8AAAA}
+.meter{height:10px;background:#B9CEDA;border-radius:999px;overflow:hidden;margin-top:8px}
+.meter span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--mint));transition:.4s}
+.certificate{
+  background:#F8FCFE;border:10px solid var(--navy);outline:2px solid var(--sand);outline-offset:-16px;border-radius:24px;
+  padding:46px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden
+}
+.certificate:before,.certificate:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(124,199,183,.13)}
+.certificate:before{left:-70px;top:-70px}.certificate:after{right:-70px;bottom:-70px}
+.cert-small{letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-size:12px}
+.cert-title{font-size:46px;margin:10px 0;color:var(--navy);font-weight:650}
+.cert-name{font-size:34px;margin:20px auto 10px;color:var(--peach);font-weight:650}
+.cert-line{max-width:680px;margin:0 auto;color:var(--muted);line-height:1.6}
+.cert-score{margin:24px auto 10px;font-size:24px;color:var(--navy)}
+.signature-row{display:grid;grid-template-columns:1fr 1fr;gap:40px;max-width:720px;margin:34px auto 0}
+.signature{border-top:1px solid var(--line);padding-top:8px;color:var(--muted);font-size:12px}
+@media print{
+  body{background:white}
+  aside,.topbar,.actions,.no-print{display:none!important}
+  .app{display:block}.stage{padding:0}.screen{display:none!important}.screen#final.active{display:block!important}
+  .certificate{box-shadow:none;min-height:95vh;display:flex;flex-direction:column;justify-content:center}
+}
+@media(max-width:1000px){
+  .app{grid-template-columns:1fr}aside{display:none}main{padding:18px 18px 76px}
+  .s4,.s5,.s6,.s7,.s8{grid-column:span 12}.drop-grid,.drop-grid.three,.option-grid{grid-template-columns:1fr}
+  .startbox{grid-template-columns:1fr}.hero{padding:34px}.hero h2{font-size:40px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand"><small>Formación para la investigación</small><h1>DATA LAB<br>Simulador de Variables</h1></div>
+  <div class="student-pill" id="studentSide">Estudiante: sin registrar</div>
+  <div class="progress-side" id="sideNav"></div>
+  <div class="aside-footer">Clasifica · relaciona · interpreta · aplica.<br>Certificado al completar el recorrido.</div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="kicker">Simulador interactivo · Semana 6</div>
+    <div class="score-pill">Puntaje: <span id="scoreTop">0</span> / 100</div>
+  </div>
+
+  <!-- INICIO -->
+  <section class="screen active" id="start" data-title="Inicio">
+    <div class="hero">
+      <div class="tag">MISIÓN DE APRENDIZAJE</div>
+      <h2>Domina las variables antes de construir datos</h2>
+      <p>Resolverás situaciones reales, clasificarás variables y reconstruirás la ruta Variable → Dimensión → Indicador. Puedes arrastrar las tarjetas o seleccionarlas y luego hacer clic en una zona.</p>
+      <div class="startbox">
+        <input id="nombre" placeholder="Nombre">
+        <input id="apellido" placeholder="Apellido">
+        <button class="btn btn-primary" id="startBtn">Comenzar misión</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NIVEL 1 -->
+  <section class="screen" id="level1" data-title="1. Cuali vs. Cuanti">
+    <div class="challenge-head">
+      <div><span class="badge">NIVEL 1 · CLASIFICACIÓN</span><h2 class="section-title">¿Cualitativa o cuantitativa?</h2><p class="subtitle">Clasifica cada tarjeta según la naturaleza del dato.</p></div>
+    </div>
+    <div class="instructions">Arrastra cada tarjeta a su categoría. También puedes tocar una tarjeta y luego tocar la zona de destino.</div>
+    <div class="drag-bank" data-bank="l1">
+      <div class="drag-card" draggable="true" data-id="edad" data-answer="cuanti">Edad</div>
+      <div class="drag-card" draggable="true" data-id="programa" data-answer="cuali">Programa académico</div>
+      <div class="drag-card" draggable="true" data-id="horas" data-answer="cuanti">Horas de sueño</div>
+      <div class="drag-card" draggable="true" data-id="estado" data-answer="cuali">Estado civil</div>
+      <div class="drag-card" draggable="true" data-id="compras" data-answer="cuanti">Número de compras</div>
+      <div class="drag-card" draggable="true" data-id="marca" data-answer="cuali">Marca de celular</div>
+    </div>
+    <div class="drop-grid">
+      <div class="dropzone" data-zone="cuali"><h4>Cualitativa</h4><div class="hint">Categorías o cualidades.</div><div class="zone-items"></div></div>
+      <div class="dropzone" data-zone="cuanti"><h4>Cuantitativa</h4><div class="hint">Valores numéricos que representan cantidad o medida.</div><div class="zone-items"></div></div>
+    </div>
+    <div class="feedback" id="fb1"></div>
+    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="1">Verificar</button><button class="btn btn-success nextLevel" data-next="level2" disabled>Continuar</button></div>
+  </section>
+
+  <!-- NIVEL 2 -->
+  <section class="screen" id="level2" data-title="2. Discreta vs. Continua">
+    <span class="badge">NIVEL 2 · CUANTITATIVAS</span>
+    <h2 class="section-title">¿Discreta o continua?</h2>
+    <p class="subtitle">Ahora clasifica únicamente variables cuantitativas.</p>
+    <div class="drag-bank" data-bank="l2">
+      <div class="drag-card" draggable="true" data-id="hijos" data-answer="discreta">Número de hijos</div>
+      <div class="drag-card" draggable="true" data-id="peso" data-answer="continua">Peso corporal</div>
+      <div class="drag-card" draggable="true" data-id="visitas" data-answer="discreta">Visitas al sitio web</div>
+      <div class="drag-card" draggable="true" data-id="tiempo" data-answer="continua">Tiempo de espera</div>
+      <div class="drag-card" draggable="true" data-id="materias" data-answer="discreta">Materias inscritas</div>
+      <div class="drag-card" draggable="true" data-id="estatura" data-answer="continua">Estatura</div>
+    </div>
+    <div class="drop-grid">
+      <div class="dropzone" data-zone="discreta"><h4>Discreta</h4><div class="hint">Se cuenta. Generalmente toma valores enteros.</div><div class="zone-items"></div></div>
+      <div class="dropzone" data-zone="continua"><h4>Continua</h4><div class="hint">Se mide. Puede tomar valores dentro de un intervalo.</div><div class="zone-items"></div></div>
+    </div>
+    <div class="feedback" id="fb2"></div>
+    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="2">Verificar</button><button class="btn btn-success nextLevel" data-next="level3" disabled>Continuar</button></div>
+  </section>
+
+  <!-- NIVEL 3 -->
+  <section class="screen" id="level3" data-title="3. Nominal, ordinal y dicotómica">
+    <span class="badge">NIVEL 3 · CUALITATIVAS</span>
+    <h2 class="section-title">Nominal, ordinal o dicotómica</h2>
+    <p class="subtitle">Clasifica variables cualitativas según el tipo de categorías que utilizan.</p>
+    <div class="drag-bank" data-bank="l3">
+      <div class="drag-card" draggable="true" data-id="ciudad" data-answer="nominal">Ciudad de residencia</div>
+      <div class="drag-card" draggable="true" data-id="satisfaccion" data-answer="ordinal">Nivel de satisfacción: bajo / medio / alto</div>
+      <div class="drag-card" draggable="true" data-id="compra" data-answer="dicotomica">Realizó compra: sí / no</div>
+      <div class="drag-card" draggable="true" data-id="plataforma" data-answer="nominal">Plataforma principal</div>
+      <div class="drag-card" draggable="true" data-id="acuerdo" data-answer="ordinal">Grado de acuerdo: 1 a 5</div>
+      <div class="drag-card" draggable="true" data-id="empleo" data-answer="dicotomica">Tiene empleo: sí / no</div>
+    </div>
+    <div class="drop-grid three">
+      <div class="dropzone" data-zone="nominal"><h4>Nominal</h4><div class="hint">Categorías sin orden.</div><div class="zone-items"></div></div>
+      <div class="dropzone" data-zone="ordinal"><h4>Ordinal</h4><div class="hint">Categorías con orden.</div><div class="zone-items"></div></div>
+      <div class="dropzone" data-zone="dicotomica"><h4>Dicotómica</h4><div class="hint">Solo dos categorías posibles.</div><div class="zone-items"></div></div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="3">Verificar</button><button class="btn btn-success nextLevel" data-next="level4" disabled>Continuar</button></div>
+  </section>
+
+  <!-- NIVEL 4 -->
+  <section class="screen" id="level4" data-title="4. Variable, dimensión e indicador">
+    <span class="badge">NIVEL 4 · OPERACIONALIZACIÓN</span>
+    <h2 class="section-title">Construye la lógica de medición</h2>
+    <p class="subtitle">Caso real: queremos estudiar el <b>estrés académico</b> en estudiantes universitarios.</p>
+    <div class="scenario">La variable general es <b>Estrés académico</b>. Organiza las demás tarjetas en <b>Dimensiones</b> e <b>Indicadores</b>.</div>
+    <div class="drag-bank" data-bank="l4">
+      <div class="drag-card" draggable="true" data-id="carga" data-answer="dimension">Carga académica</div>
+      <div class="drag-card" draggable="true" data-id="bienestar" data-answer="dimension">Bienestar emocional</div>
+      <div class="drag-card" draggable="true" data-id="gestion" data-answer="dimension">Gestión del tiempo</div>
+      <div class="drag-card" draggable="true" data-id="sueno" data-answer="indicador">Horas de sueño</div>
+      <div class="drag-card" draggable="true" data-id="agobio" data-answer="indicador">Sensación de agobio</div>
+      <div class="drag-card" draggable="true" data-id="procrastina" data-answer="indicador">Frecuencia de procrastinación</div>
+      <div class="drag-card" draggable="true" data-id="concentra" data-answer="indicador">Dificultad para concentrarse</div>
+    </div>
+    <div class="drop-grid">
+      <div class="dropzone" data-zone="dimension"><h4>Dimensiones</h4><div class="hint">Partes o componentes de la variable.</div><div class="zone-items"></div></div>
+      <div class="dropzone" data-zone="indicador"><h4>Indicadores</h4><div class="hint">Señales concretas que se pueden observar o medir.</div><div class="zone-items"></div></div>
+    </div>
+    <div class="feedback" id="fb4"></div>
+    <div class="actions"><button class="btn btn-secondary resetLevel">Reiniciar</button><button class="btn btn-dark checkLevel" data-level="4">Verificar</button><button class="btn btn-success nextLevel" data-next="level5" disabled>Continuar</button></div>
+  </section>
+
+  <!-- NIVEL 5 -->
+  <section class="screen" id="level5" data-title="5. Situaciones reales">
+    <span class="badge">NIVEL 5 · APLICACIÓN</span>
+    <h2 class="section-title">Decisiones de investigación</h2>
+    <p class="subtitle">Resuelve cuatro situaciones. Aquí ya no basta clasificar: debes elegir la mejor decisión metodológica.</p>
+
+    <div class="card" id="quizBox">
+      <div class="scenario" id="scenarioText"></div>
+      <div class="option-grid" id="options"></div>
+      <div class="feedback" id="quizFeedback"></div>
+      <div class="actions"><button class="btn btn-dark" id="nextQuestion" disabled>Siguiente situación</button></div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="screen" id="final" data-title="Certificado">
+    <div class="certificate">
+      <div class="cert-small">CERTIFICADO DE FINALIZACIÓN</div>
+      <div class="cert-title">DATA LAB · Variables y Operacionalización</div>
+      <p class="cert-line">Se certifica que</p>
+      <div class="cert-name" id="certName">Estudiante</div>
+      <p class="cert-line">completó satisfactoriamente el simulador de clasificación de variables, categorías cuantitativas y cualitativas, y operacionalización mediante variable, dimensión e indicador.</p>
+      <div class="cert-score">Resultado: <span id="finalScore">0</span> / 100</div>
+      <p class="cert-line" id="certMessage"></p>
+      <div class="signature-row">
+        <div class="signature">Formación para la investigación</div>
+        <div class="signature">Semana 6 · Simulador interactivo</div>
+      </div>
+    </div>
+    <div class="actions no-print">
+      <button class="btn btn-secondary" id="restartAll">Reiniciar simulador</button>
+      <button class="btn btn-primary" id="printCert">Imprimir / Guardar certificado en PDF</button>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(() => {
+  const screens = [...document.querySelectorAll('.screen')];
+  const nav = document.getElementById('sideNav');
+  const scoreTop = document.getElementById('scoreTop');
+  const studentSide = document.getElementById('studentSide');
+
+  const state = {
+    student: '',
+    score: 0,
+    completed: new Set(),
+    placements: {},
+    quizIndex: 0,
+    quizScore: 0,
+    selectedCard: null
+  };
+
+  const quiz = [
+    {
+      text:'Quieres estudiar la relación entre el tiempo diario en redes sociales y la procrastinación académica. ¿Cuál opción representa mejor una variable cuantitativa?',
+      options:['Plataforma principal','Horas diarias en redes sociales','Tipo de contenido preferido','Programa académico'],
+      correct:1,
+      explain:'Las horas diarias se expresan numéricamente y representan una medida de tiempo.'
+    },
+    {
+      text:'Quieres medir satisfacción con una relación de pareja. ¿Cuál sería una dimensión razonable de esa variable?',
+      options:['Número de cédula','Comunicación','Edad del investigador','Color favorito'],
+      correct:1,
+      explain:'La comunicación es un componente de la satisfacción en una relación; por eso funciona como dimensión.'
+    },
+    {
+      text:'La dimensión es “Comunicación”. ¿Cuál opción funciona mejor como indicador?',
+      options:['Capacidad percibida de escucha','Ciudad de residencia','Marca del celular','Número de materias'],
+      correct:0,
+      explain:'La escucha es una señal concreta que permite observar la calidad de la comunicación.'
+    },
+    {
+      text:'¿Cuál pregunta está mejor formulada para medir el indicador “escucha percibida”?',
+      options:[
+        '¿Su pareja lo escucha y además lo apoya siempre?',
+        '¿Hablan mucho?',
+        'Cuando hablo de algo importante, siento que mi pareja me escucha con atención.',
+        '¿No cree que su pareja debería escucharlo más?'
+      ],
+      correct:2,
+      explain:'Es clara, específica, neutral y mide una sola idea.'
+    }
+  ];
+
+  screens.forEach((s,i)=>{
+    if(s.id==='start') return;
+    const b=document.createElement('button');
+    b.className='step-link locked';
+    b.textContent=s.dataset.title;
+    b.dataset.target=s.id;
+    b.addEventListener('click',()=>{
+      if(!b.classList.contains('locked')) showScreen(s.id);
+    });
+    nav.appendChild(b);
+  });
+
+  function showScreen(id){
+    screens.forEach(s=>s.classList.toggle('active', s.id===id));
+    [...nav.children].forEach(b=>b.classList.toggle('active', b.dataset.target===id));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function unlock(id){
+    const b=[...nav.children].find(x=>x.dataset.target===id);
+    if(b) b.classList.remove('locked');
+  }
+
+  function markDone(id){
+    const b=[...nav.children].find(x=>x.dataset.target===id);
+    if(b){ b.classList.remove('locked'); b.classList.add('done'); }
+  }
+
+  function updateScore(v){
+    state.score=Math.max(0,Math.min(100,v));
+    scoreTop.textContent=state.score;
+  }
+
+  document.getElementById('startBtn').addEventListener('click',()=>{
+    const n=document.getElementById('nombre').value.trim();
+    const a=document.getElementById('apellido').value.trim();
+    if(!n || !a){
+      alert('Ingresa nombre y apellido para comenzar.');
+      return;
+    }
+    state.student=`${n} ${a}`;
+    studentSide.textContent=`Estudiante: ${state.student}`;
+    unlock('level1');
+    showScreen('level1');
+  });
+
+  function initDragCard(card){
+    card.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text/plain',card.dataset.id);
+      state.selectedCard=card;
+    });
+    card.addEventListener('click',()=>{
+      document.querySelectorAll('.drag-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedCard=card;
+    });
+  }
+  document.querySelectorAll('.drag-card').forEach(initDragCard);
+
+  document.querySelectorAll('.dropzone').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('over')});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
+    zone.addEventListener('drop',e=>{
+      e.preventDefault();zone.classList.remove('over');
+      const id=e.dataTransfer.getData('text/plain');
+      const card=document.querySelector(`.drag-card[data-id="${id}"]`);
+      if(card) placeCard(card,zone);
+    });
+    zone.addEventListener('click',e=>{
+      if(e.target.closest('.drag-card')) return;
+      if(state.selectedCard && state.selectedCard.closest('.screen')===zone.closest('.screen')){
+        placeCard(state.selectedCard,zone);
+      }
+    });
+  });
+
+  function placeCard(card,zone){
+    const bank=zone.closest('.screen').querySelector('.drag-bank');
+    const items=zone.querySelector('.zone-items');
+    items.appendChild(card);
+    card.classList.remove('selected');
+    state.selectedCard=null;
+    card.dataset.zone=zone.dataset.zone;
+    card.draggable=true;
+  }
+
+  document.querySelectorAll('.resetLevel').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const screen=btn.closest('.screen');
+      const bank=screen.querySelector('.drag-bank');
+      screen.querySelectorAll('.dropzone .drag-card').forEach(c=>{
+        delete c.dataset.zone;
+        bank.appendChild(c);
+      });
+      const fb=screen.querySelector('.feedback');
+      fb.className='feedback'; fb.textContent='';
+      screen.querySelector('.nextLevel').disabled=true;
+    });
+  });
+
+  document.querySelectorAll('.checkLevel').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const level=Number(btn.dataset.level);
+      const screen=btn.closest('.screen');
+      const cards=[...screen.querySelectorAll('.drag-card')];
+      const fb=screen.querySelector('.feedback');
+      const placed=cards.every(c=>c.dataset.zone);
+      if(!placed){
+        fb.className='feedback bad show';
+        fb.textContent='Aún quedan tarjetas sin clasificar.';
+        return;
+      }
+      let correct=0;
+      cards.forEach(c=>{ if(c.dataset.zone===c.dataset.answer) correct++; });
+      const pct=Math.round(correct/cards.length*100);
+      const points=level===4?20:15;
+      const earned=Math.round(points*(correct/cards.length));
+      if(!state.completed.has(screen.id)){
+        updateScore(state.score+earned);
+        state.completed.add(screen.id);
+      }
+      if(correct===cards.length){
+        fb.className='feedback good show';
+        fb.textContent=`¡Excelente! ${correct}/${cards.length} correctas. La clasificación es coherente.`;
+        screen.querySelector('.nextLevel').disabled=false;
+        markDone(screen.id);
+      } else {
+        fb.className='feedback bad show';
+        fb.textContent=`Tienes ${correct}/${cards.length} correctas. Revisa la definición de cada categoría antes de continuar.`;
+      }
+    });
+  });
+
+  document.querySelectorAll('.nextLevel').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const next=btn.dataset.next;
+      unlock(next);
+      showScreen(next);
+      if(next==='level5') renderQuiz();
+    });
+  });
+
+  function renderQuiz(){
+    const q=quiz[state.quizIndex];
+    document.getElementById('scenarioText').textContent=`Situación ${state.quizIndex+1} de ${quiz.length}: ${q.text}`;
+    const options=document.getElementById('options');
+    options.innerHTML='';
+    const fb=document.getElementById('quizFeedback');
+    fb.className='feedback'; fb.textContent='';
+    const nextBtn=document.getElementById('nextQuestion');
+    nextBtn.disabled=true;
+    nextBtn.textContent=state.quizIndex===quiz.length-1?'Finalizar misión':'Siguiente situación';
+
+    q.options.forEach((opt,idx)=>{
+      const b=document.createElement('button');
+      b.type='button';b.className='option';b.textContent=opt;
+      b.addEventListener('click',()=>{
+        options.querySelectorAll('.option').forEach(x=>x.disabled=true);
+        if(idx===q.correct){
+          b.classList.add('correct');
+          state.quizScore+=1;
+          fb.className='feedback good show';
+          fb.textContent=`Correcto. ${q.explain}`;
+        } else {
+          b.classList.add('wrong');
+          options.children[q.correct].classList.add('correct');
+          fb.className='feedback bad show';
+          fb.textContent=`No es la mejor opción. ${q.explain}`;
+        }
+        nextBtn.disabled=false;
+      });
+      options.appendChild(b);
+    });
+  }
+
+  document.getElementById('nextQuestion').addEventListener('click',()=>{
+    if(state.quizIndex<quiz.length-1){
+      state.quizIndex++;
+      renderQuiz();
+    } else {
+      if(!state.completed.has('level5')){
+        const earned=Math.round(35*(state.quizScore/quiz.length));
+        updateScore(state.score+earned);
+        state.completed.add('level5');
+      }
+      markDone('level5');
+      unlock('final');
+      finish();
+    }
+  });
+
+  function finish(){
+    document.getElementById('certName').textContent=state.student;
+    document.getElementById('finalScore').textContent=state.score;
+    const msg=state.score>=90
+      ? 'Desempeño sobresaliente: domina la clasificación y la lógica de operacionalización.'
+      : state.score>=75
+      ? 'Buen desempeño: comprende los conceptos y puede aplicarlos en situaciones reales.'
+      : 'Misión completada. Se recomienda repasar las categorías y repetir el simulador para fortalecer el resultado.';
+    document.getElementById('certMessage').textContent=msg;
+    showScreen('final');
+  }
+
+  document.getElementById('printCert').addEventListener('click',()=>window.print());
+  document.getElementById('restartAll').addEventListener('click',()=>location.reload());
+})();
+</script>
+</body>
+</html>
